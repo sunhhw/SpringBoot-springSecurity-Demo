@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,10 +39,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
-
     @Autowired
     private DataSource dataSource;
 
+    /**
+     * ROLE_ADMIN 角色的权利大于 ROLE_USER
+     * 所以只要是ROLE_ADMIN角色的用户都可以访问ROLE_USER的权限
+     * @return
+     */
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+        roleHierarchy.setHierarchy("ROLE_ADMIN > ROLE_USER");
+        return roleHierarchy;
+    }
 
     @Bean
     public SessionRegistry sessionRegistry() {
@@ -59,6 +71,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     /**
      * 注入自定义的PermissionEvaluator
+     *
      * @return
      */
     @Bean
@@ -102,52 +115,52 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
-                    // 在类中处理
-                   // .invalidSessionStrategy()
-                    // 跳转路径处理
-                    //.invalidSessionUrl("/login/invalid")
-                    // 指定最大登录数
-                    .maximumSessions(1)
-                    // false 表示后登录的把前面一个登录的给踢掉
-                    .maxSessionsPreventsLogin(false)
-                    // 当达到最大值的时候，旧用户被踢出后的操作
-                    // 在类中处理
-                    .expiredSessionStrategy(new CustomExpiredSessionStrategy())
-                    // 主动踢出一个用户
-                    .sessionRegistry(sessionRegistry())
+                // 在类中处理
+                // .invalidSessionStrategy()
+                // 跳转路径处理
+                //.invalidSessionUrl("/login/invalid")
+                // 指定最大登录数
+                .maximumSessions(1)
+                // false 表示后登录的把前面一个登录的给踢掉
+                .maxSessionsPreventsLogin(false)
+                // 当达到最大值的时候，旧用户被踢出后的操作
+                // 在类中处理
+                .expiredSessionStrategy(new CustomExpiredSessionStrategy())
+                // 主动踢出一个用户
+                .sessionRegistry(sessionRegistry())
                 .and()
                 // 跳转url处理
                 // .expiredUrl()
                 .and()
                 // 设置登录页
                 .formLogin()
-                    .loginPage("/login")
-                    // 设置登录成功页
-                    //.defaultSuccessUrl("/").permitAll()
-                    // 设置登录成功后的执行器
-                    .successHandler(new CustomAuthenticationSuccessHandler())
-                    // 设置登录失败后的执行器
-                    .failureHandler(new CustomAuthenticationFailureHandler())
-                    .permitAll()
-                    // 设置登录失败的跳转路径
-                    //.failureUrl("/errorss")
-                    // 自定义登录用户名和密码参数，默认为username和password
-                    // 前端传来的字段也要是username和password
-                    //.usernameParameter("username")
-                    //.passwordParameter("password")
+                .loginPage("/login")
+                // 设置登录成功页
+                //.defaultSuccessUrl("/").permitAll()
+                // 设置登录成功后的执行器
+                .successHandler(new CustomAuthenticationSuccessHandler())
+                // 设置登录失败后的执行器
+                .failureHandler(new CustomAuthenticationFailureHandler())
+                .permitAll()
+                // 设置登录失败的跳转路径
+                //.failureUrl("/errorss")
+                // 自定义登录用户名和密码参数，默认为username和password
+                // 前端传来的字段也要是username和password
+                //.usernameParameter("username")
+                //.passwordParameter("password")
                 .and()
                 .logout()
-                    // 默认的退出地址是/logout，这里是更改默认的退出地址为signout
-                    //.logoutUrl("/signout")
-                    // 退出时删除JSESSIONID的cookie
-                    //.deleteCookies("JSESSIONID")
-                    // 退出成功后由这个类处理
-                    .logoutSuccessHandler(new CustomLogoutSuccessHandler())
-                    // 退出成功后走url路径
-                    //.logoutSuccessUrl()
-                    //.permitAll()
-                    // 自动登录(存在cookie中，不安全)
-                    // 我们登陆时勾选自动登录时，会自动在 Cookie 中保存一个名为 remember-me 的cookie，默认有效期为2周，其值是一个加密字符串
+                // 默认的退出地址是/logout，这里是更改默认的退出地址为signout
+                //.logoutUrl("/signout")
+                // 退出时删除JSESSIONID的cookie
+                //.deleteCookies("JSESSIONID")
+                // 退出成功后由这个类处理
+                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+                // 退出成功后走url路径
+                //.logoutSuccessUrl()
+                //.permitAll()
+                // 自动登录(存在cookie中，不安全)
+                // 我们登陆时勾选自动登录时，会自动在 Cookie 中保存一个名为 remember-me 的cookie，默认有效期为2周，其值是一个加密字符串
                 .and().rememberMe()
                 .tokenRepository(persistentTokenRepository())
                 // 有效时间，单位秒
@@ -161,6 +174,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(WebSecurity web) throws Exception {
         // 设置拦截忽略的文件夹，可以对静态资源放行
-        web.ignoring().antMatchers("/css/**","/js/**");
+        web.ignoring().antMatchers("/css/**", "/js/**");
     }
 }
